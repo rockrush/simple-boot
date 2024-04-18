@@ -1,0 +1,38 @@
+# Supports x86_64, aarch64
+ARCH=x86_64
+CFLAGS = -ffreestanding -MMD -mno-red-zone -std=c11 -target $(ARCH)-unknown-windows
+CFLAGS += -I gnu-efi/inc
+LDFLAGS = -flavor link -subsystem:efi_application -entry:efi_main
+#LDFLAGS += $(shell pkg-config --libs gnu-efi)
+
+# LVGL
+include lvgl/lvgl.mk
+LVSRCS=$(shell find lvgl/src -type f -name '*.c')
+LVOBJS=$(LVSRCS:.c=.o)
+
+TARGET = simple-boot.efi
+SRCS := main.c
+
+all: $(TARGET)
+
+.c.o:
+	clang $(CFLAGS) -c $< -o $@
+
+$(TARGET): main.o $(LVOBJS)
+	lld $(LDFLAGS) $< -out:$@
+
+#-include $(SRCS:.c=.d)
+
+.PHONY: clean test
+
+clean:
+	@rm -f $(TARGET) *.d *.o
+	@rm -fr test
+
+test: $(TARGET)
+	rm -fr test
+	mkdir -p test/efi/boot
+	cp $(TARGET) test/efi/boot/bootx64.efi
+	cp -f /usr/share/ovmf/OVMF.fd test/
+	qemu-system-x86_64 -M q35 -drive if=pflash,format=raw,file=test/OVMF.fd \
+		-drive format=raw,file=fat:rw:test -net none -nographic

@@ -1,0 +1,52 @@
+SRCDIR = .
+VPATH = $(SRCDIR)
+TOPDIR = $(SRCDIR)/gnu-efi
+
+include $(TOPDIR)/Make.defaults
+
+APPSDIR		= $(LIBDIR)/gnuefi/apps
+CPPFLAGS	+= -D__KERNEL__ -I/usr/src/linux-headers-$(shell uname -r)/include
+CFLAGS		+= -DLV_CONF_INCLUDE_SIMPLE -I.
+CRTOBJS		= $(TOPDIR)/$(ARCH)/gnuefi/crt0-efi-$(ARCH).o
+
+LDSCRIPT	= $(TOPDIR)/gnuefi/elf_$(ARCH)_efi.lds
+LDFLAGS		+= -shared -Bsymbolic -L$(TOPDIR)/$(ARCH)/lib -L$(TOPDIR)/$(ARCH)/gnuefi $(CRTOBJS)
+LOADLIBES	+= -lefi -lgnuefi $(LIBGCC) -T $(LDSCRIPT)
+
+#ifneq ($(HAVE_EFI_OBJCOPY),)
+FORMAT		:= --target efi-app-$(ARCH)
+#else
+#SUBSYSTEM	:= 0xa
+#FORMAT		:= -O binary
+#LDFLAGS		+= --defsym=EFI_SUBSYSTEM=$(SUBSYSTEM)
+#endif
+
+# LVGL
+include lvgl/lvgl.mk
+LVSRCS=$(shell find lvgl/src -type f -name '*.c' | grep -v qrcode)
+LVOBJS=$(LVSRCS:.c=.o)
+
+TARGET = main.efi
+
+all:	gnu-efi/$(ARCH)/gnuefi/libgnuefi.a $(TARGET)
+
+gnu-efi/$(ARCH)/gnuefi/libgnuefi.a:
+	make -C gnu-efi
+
+main.so: main.o $(LVOBJS)
+	$(LD) $(LDFLAGS) $^ -o $@ $(LOADLIBES)
+
+.PHONY: clean test
+clean:
+	@rm -f $(TARGET) *~ *.o *.so *.d
+
+test: $(TARGET)
+	rm -fr test
+	mkdir -p test/efi/boot
+	# Other archs need different names than x64
+	cp $(TARGET) test/efi/boot/bootx64.efi
+	cp -f /usr/share/ovmf/OVMF.fd test/
+	qemu-system-x86_64 -M q35 -drive if=pflash,format=raw,file=test/OVMF.fd \
+		-drive format=raw,file=fat:rw:test -net none
+
+include $(TOPDIR)/Make.rules
