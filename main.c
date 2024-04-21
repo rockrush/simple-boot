@@ -13,7 +13,7 @@ static UINTN scr_width, scr_height;
 static EFI_GRAPHICS_OUTPUT_PROTOCOL *gout;
 static EFI_SIMPLE_POINTER_PROTOCOL *pointer;
 
-void lv_demo_keypad_encoder(void);
+void lv_efi_entry(EFI_SYSTEM_TABLE *table);
 
 void efi_flush_cb(lv_display_t *disp, const lv_area_t *area, unsigned char *pixmap)
 {
@@ -92,6 +92,10 @@ void efi_mouse_cb(lv_indev_t *indev, lv_indev_data_t *data)
 		mouse_w = 1;
 		mouse_h = 1;
 	} else if (status == EFI_SUCCESS) {
+		// TODO: if button pressed: LeftButton/RightButton
+		if (!state.LeftButton && !state.RightButton)
+			return;
+
 		data->point.x += MOUSE_SCALE * state.RelativeMovementX / pointer->Mode->ResolutionX;
 		data->point.y += MOUSE_SCALE * state.RelativeMovementY / pointer->Mode->ResolutionY;
 		data->state = LV_INDEV_STATE_PRESSED;
@@ -161,7 +165,7 @@ EFI_STATUS efi_main(EFI_HANDLE handle, EFI_SYSTEM_TABLE *sys_table)
 	lv_indev_set_cursor(mouse, mouse_cursor);
 
 	// TODO: find and draw boot entries
-	lv_demo_keypad_encoder();
+	lv_efi_entry(sys_table);
 
 	while (TRUE) {
 		char dbg_msg[128];

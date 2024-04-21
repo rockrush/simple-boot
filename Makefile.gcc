@@ -32,7 +32,7 @@ all:	gnu-efi/$(ARCH)/gnuefi/libgnuefi.a $(TARGET)
 gnu-efi/$(ARCH)/gnuefi/libgnuefi.a:
 	make -C gnu-efi
 
-main.so: main.o $(LVOBJS) demo_keypad_encoder.o
+main.so: main.o ui.o $(LVOBJS)
 	$(LD) $(LDFLAGS) $^ -o $@ $(LOADLIBES)
 
 .PHONY: clean test

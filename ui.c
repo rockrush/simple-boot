@@ -24,42 +24,6 @@ static lv_obj_t * t1;
 static lv_obj_t * t2;
 
 /**********************
- *   GLOBAL FUNCTIONS
- **********************/
-void lv_demo_keypad_encoder(void)
-{
-    g = lv_group_create();
-    lv_group_set_default(g);
-
-    lv_indev_t * indev = NULL;
-    for(;;) {
-        indev = lv_indev_get_next(indev);
-        if(!indev) {
-            break;
-        }
-
-        lv_indev_type_t indev_type = lv_indev_get_type(indev);
-        if(indev_type == LV_INDEV_TYPE_KEYPAD) {
-            lv_indev_set_group(indev, g);
-        }
-
-        if(indev_type == LV_INDEV_TYPE_ENCODER) {
-            lv_indev_set_group(indev, g);
-        }
-    }
-
-    tv = lv_tabview_create(lv_screen_active());
-
-    t1 = lv_tabview_add_tab(tv, "Selectors");
-    t2 = lv_tabview_add_tab(tv, "Text input");
-
-    selectors_create(t1);
-    text_input_create(t2);
-
-    msgbox_create();
-}
-
-/**********************
  *   STATIC FUNCTIONS
  **********************/
 static void selectors_create(lv_obj_t * parent)
@@ -176,4 +140,39 @@ static void ta_event_cb(lv_event_t * e)
         lv_obj_add_flag(kb, LV_OBJ_FLAG_HIDDEN);
         lv_obj_set_height(tv, LV_VER_RES);
     }
+}
+
+void lv_efi_entry(EFI_SYSTEM_TABLE *sys_table)
+{
+    lv_indev_t * indev = NULL;
+
+    LV_UNUSED(sys_table);
+    g = lv_group_create();
+    lv_group_set_default(g);
+
+    for(;;) {
+        indev = lv_indev_get_next(indev);
+        if(!indev) {
+            break;
+        }
+
+        lv_indev_type_t indev_type = lv_indev_get_type(indev);
+        if(indev_type == LV_INDEV_TYPE_KEYPAD) {
+            lv_indev_set_group(indev, g);
+        }
+
+        if(indev_type == LV_INDEV_TYPE_ENCODER) {
+            lv_indev_set_group(indev, g);
+        }
+    }
+
+    tv = lv_tabview_create(lv_screen_active());
+
+    t1 = lv_tabview_add_tab(tv, "Selectors");
+    t2 = lv_tabview_add_tab(tv, "Text input");
+
+    selectors_create(t1);
+    text_input_create(t2);
+
+    msgbox_create();
 }
