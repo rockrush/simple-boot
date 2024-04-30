@@ -5,8 +5,6 @@
 #include "driver.h"
 #include "demos/lv_demos.h"
 
-extern UINT64 mouse_w, mouse_h;
-
 void efi_flush_cb(lv_display_t *disp, const lv_area_t *area, unsigned char *pixmap)
 {
 	uint32_t *buf = (uint32_t *)pixmap;
@@ -81,9 +79,7 @@ void efi_mouse_cb(lv_indev_t *indev, lv_indev_data_t *data)
 	if (status == EFI_DEVICE_ERROR) {
 		Print(L"Mouse callback failed.\n\r");
 		return;
-	} else if (status == EFI_NOT_READY) {
-		mouse_w = 1;
-		mouse_h = 1;
+	//} else if (status == EFI_NOT_READY) {
 	} else if (status == EFI_SUCCESS) {
 		// TODO: if button pressed: LeftButton/RightButton
 		//if (!state.LeftButton && !state.RightButton)
@@ -102,8 +98,6 @@ void efi_mouse_cb(lv_indev_t *indev, lv_indev_data_t *data)
 		else if (data->point.y >= (int32_t)(simple_drv.scr_h - 8))
 			data->point.y = (int32_t)(simple_drv.scr_h - 8);
 
-		mouse_w = state.RelativeMovementX;
-		mouse_h = state.RelativeMovementY;
 		return;
 	} else
 		data->state = LV_INDEV_STATE_RELEASED;
@@ -120,21 +114,14 @@ void efi_touchpad_cb(lv_indev_t *indev, lv_indev_data_t *data)
 	if (status == EFI_DEVICE_ERROR) {
 		Print(L"Touchpad callback failed.\n\r");
 		return;
-	} else if (status == EFI_NOT_READY) {
-		mouse_w = 1;
-		mouse_h = 1;
+	//} else if (status == EFI_NOT_READY) {
 	} else if (status == EFI_SUCCESS) {
-		// TODO: if pressed
 		//if (!state.ActiveButton)
 		//	return;
 
 		data->point.x += sens * (state.CurrentX - simple_drv.ptouchpad->Mode->AbsoluteMinX);
 		data->point.y += sens * (state.CurrentY - simple_drv.ptouchpad->Mode->AbsoluteMinY);
-		// scr_w * (CurrentX - AbsoluteMinX) / mode.(AbsoluteMaxX - AbsoluteMinX) / MOUSE_SCALE
 		data->state = LV_INDEV_STATE_PRESSED;
-
-		mouse_w = state.CurrentX;
-		mouse_h = state.CurrentY;
 		return;
 	} else
 		data->state = LV_INDEV_STATE_RELEASED;

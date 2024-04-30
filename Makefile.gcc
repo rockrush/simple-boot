@@ -46,6 +46,6 @@ test: $(TARGET)
 	cp $< test/efi/boot/bootx64.efi
 	cp -f /usr/share/ovmf/OVMF.fd test/
 	qemu-system-x86_64 -M q35 -drive if=pflash,format=raw,file=test/OVMF.fd \
-		-usbdevice mouse -drive format=raw,file=fat:rw:test -net none
+		-usbdevice mouse -drive format=raw,file=fat:rw:test -net none -rtc base=utc,clock=host
 
 include $(TOPDIR)/Make.rules

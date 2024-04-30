@@ -5,15 +5,34 @@
 #include "driver.h"
 #include "demos/lv_demos.h"
 
-UINT64 mouse_w = 0, mouse_h = 0;
-extern lv_obj_t *label_debug;
-
 struct simple_boot_drv_s simple_drv;
+
+void efi_lv_entry(EFI_SYSTEM_TABLE *table);
+
+// Unit: 100 millisecond
+EFI_STATUS efi_delay(void)
+{
+		EFI_STATUS status;
+		EFI_EVENT event;
+		void *wait_list[2];
+		UINTN index = 0;
+		status = gBS->CreateEvent(EVT_TIMER, TPL_APPLICATION, (EFI_EVENT_NOTIFY)NULL, (VOID *)NULL, &event);
+		if (EFI_ERROR(status))
+			lv_label_set_text(simple_drv.dbg, "EFI:CreateEvent");
+		status = gBS->SetTimer(event, TimerPeriodic, 1000*1000);
+		if (EFI_ERROR(status))
+			lv_label_set_text(simple_drv.dbg, "EFI:SetTimer");
+
+		wait_list[0] = event;
+		status = gBS->WaitForEvent(1, wait_list, &index);
+		return status;
+}
 
 EFI_STATUS efi_main(EFI_HANDLE handle, EFI_SYSTEM_TABLE *sys_table)
 {
 	EFI_STATUS status;
-	int tmp_len;
+	int buf_size;
+	int countdown = 10;
 
 	LV_UNUSED(sys_table);
 	if (!handle)
@@ -45,16 +64,19 @@ EFI_STATUS efi_main(EFI_HANDLE handle, EFI_SYSTEM_TABLE *sys_table)
 
 	// LVGL display device
 	lv_init();
+	simple_drv.g = lv_group_create();
+	lv_group_set_default(simple_drv.g);
 	simple_drv.display = lv_display_create(simple_drv.scr_w, simple_drv.scr_h);
-	tmp_len = sizeof(uint16_t) * simple_drv.scr_w * simple_drv.scr_h / 10;
-	gST->BootServices->AllocatePool(EfiLoaderData, tmp_len, (void **)&simple_drv.buf);
-	lv_display_set_buffers(simple_drv.display, simple_drv.buf, NULL, tmp_len, LV_DISPLAY_RENDER_MODE_PARTIAL);
+	buf_size = sizeof(uint16_t) * simple_drv.scr_w * simple_drv.scr_h / 10;
+	gST->BootServices->AllocatePool(EfiLoaderData, buf_size, (void **)&simple_drv.buf);
+	lv_display_set_buffers(simple_drv.display, simple_drv.buf, NULL, buf_size, LV_DISPLAY_RENDER_MODE_PARTIAL);
 	lv_display_set_flush_cb(simple_drv.display, efi_flush_cb);
 
 	// LVGL keyboard device
 	simple_drv.kbd = lv_indev_create();
 	lv_indev_set_type(simple_drv.kbd, LV_INDEV_TYPE_KEYPAD);
 	lv_indev_set_read_cb(simple_drv.kbd, efi_kbd_cb);
+	lv_indev_set_group(simple_drv.kbd, simple_drv.g);
 
 	// LVGL mouse device
 	simple_drv.mouse = lv_indev_create();
@@ -63,24 +85,39 @@ EFI_STATUS efi_main(EFI_HANDLE handle, EFI_SYSTEM_TABLE *sys_table)
 	lv_indev_set_read_cb(simple_drv.mouse, efi_mouse_cb);
 	lv_image_set_src(simple_drv.mouse_cursor, LV_SYMBOL_EDIT);	// TODO: cursor
 	lv_indev_set_cursor(simple_drv.mouse, simple_drv.mouse_cursor);
+	lv_indev_set_group(simple_drv.mouse, simple_drv.g);
 
 	// LVGL touchpad device
 	simple_drv.touchpad = lv_indev_create();
 	lv_indev_set_type(simple_drv.touchpad, LV_INDEV_TYPE_POINTER);
 	lv_indev_set_read_cb(simple_drv.touchpad, efi_touchpad_cb);
 	lv_indev_set_cursor(simple_drv.touchpad, simple_drv.mouse_cursor);
+	lv_indev_set_group(simple_drv.touchpad, simple_drv.g);
 
-	// TODO: find and draw boot entries
-	lv_efi_entry(sys_table);
+	simple_drv.timeout_percent = 100;
+	efi_lv_entry(sys_table);
 
 	while (TRUE) {
-		char dbg_msg[128];
-		lv_snprintf(dbg_msg, 120, "Mouse: x=%d, y=%d", mouse_w, mouse_h);
-		lv_label_set_text(label_debug, dbg_msg);
-		lv_tick_inc(50);
+		char dbg_msg[32];
+
+		efi_delay();
+		lv_tick_inc(100);
+
+		countdown--;
+		if (countdown <= 0) {
+			countdown = 10;
+			simple_drv.timeout_percent -= 2;
+			if (simple_drv.timeout_percent == 0)
+				simple_drv.timeout_percent = 100;
+			lv_bar_set_value(simple_drv.timeout, simple_drv.timeout_percent, LV_ANIM_ON);
+
+			lv_snprintf(dbg_msg, 30, "[Debug] seconds left: %d", simple_drv.timeout_percent / 2);
+			if (simple_drv.dbg)
+				lv_label_set_text(simple_drv.dbg, dbg_msg);
+		}
+
 		lv_task_handler();
 	}
-
 
 	return EFI_SUCCESS;
 }
