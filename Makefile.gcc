@@ -32,7 +32,7 @@ all:	gnu-efi/$(ARCH)/gnuefi/libgnuefi.a $(TARGET)
 gnu-efi/$(ARCH)/gnuefi/libgnuefi.a:
 	make -C gnu-efi
 
-main.so: main.o ui.o driver.o $(LVOBJS)
+main.so: main.o ui.o driver.o weed_1280.o weed_1920.o $(LVOBJS)
 	$(LD) $(LDFLAGS) $^ -o $@ $(LOADLIBES)
 
 .PHONY: clean test
@@ -40,9 +40,9 @@ clean:
 	@rm -f $(TARGET) *~ *.o *.so *.d
 
 test: $(TARGET)
-	rm -fr test
+	@rm -fr test
 	mkdir -p test/efi/boot
-	# TODO: Other archs need different names than x64
+	@# TODO: Other archs need different names than x64
 	cp $< test/efi/boot/bootx64.efi
 	cp -f /usr/share/ovmf/OVMF.fd test/
 	qemu-system-x86_64 -M q35 -drive if=pflash,format=raw,file=test/OVMF.fd \

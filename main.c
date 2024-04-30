@@ -79,6 +79,7 @@ EFI_STATUS efi_main(EFI_HANDLE handle, EFI_SYSTEM_TABLE *sys_table)
 	lv_indev_set_group(simple_drv.kbd, simple_drv.g);
 
 	// LVGL mouse device
+	//LV_IMG_DECLARE(cursor);
 	simple_drv.mouse = lv_indev_create();
 	simple_drv.mouse_cursor = lv_image_create(lv_screen_active()); 
 	lv_indev_set_type(simple_drv.mouse, LV_INDEV_TYPE_POINTER);
