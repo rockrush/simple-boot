@@ -28,8 +28,8 @@
 
 /*Color depth: 8 (A8), 16 (RGB565), 24 (RGB888), 32 (XRGB8888)*/
 #define LV_COLOR_DEPTH 32
-#define LV_HOR_RES_MAX	1280
-#define LV_VER_RES_MAX	800
+#define LV_HOR_RES_MAX	3840
+#define LV_VER_RES_MAX	2160
 
 /*=========================
    STDLIB WRAPPER SETTINGS
