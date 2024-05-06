@@ -63,6 +63,7 @@ void efi_kbd_cb(lv_indev_t *indev, lv_indev_data_t *data)
 	if (Status == EFI_SUCCESS) {
 		data->key = keycode_to_ascii(Key);
 		data->state = LV_INDEV_STATE_PRESSED;
+		// TODO: hot keys processing
 		return;
 	}
 	data->state = LV_INDEV_STATE_RELEASED;

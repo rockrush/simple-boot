@@ -47,6 +47,9 @@ EFI_STATUS efi_main(EFI_HANDLE handle, EFI_SYSTEM_TABLE *sys_table)
 	status = gBS->LocateProtocol(&gEfiGraphicsOutputProtocolGuid, NULL, (VOID **) &simple_drv.gout);
 	if (EFI_ERROR(status))
 		return EFI_UNSUPPORTED;
+	//status = gBS->LocateProtocol(&ShellProtocolGuid, NULL, (VOID **) &simple_drv.shell);
+	//if (EFI_ERROR(status))
+	//	return EFI_UNSUPPORTED;
 	simple_drv.scr_w = simple_drv.gout->Mode->Info->HorizontalResolution;
 	simple_drv.scr_h = simple_drv.gout->Mode->Info->VerticalResolution;
 

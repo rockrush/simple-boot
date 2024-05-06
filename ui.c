@@ -2,6 +2,7 @@
 #include <efilib.h>
 #include "demos/lv_demos.h"
 #include "driver.h"
+#include "boot.h"
 
 static void boot_linux(lv_event_t *e)
 {
@@ -14,11 +15,24 @@ static void boot_linux(lv_event_t *e)
 	}
 }
 
+void menu_entry_add(lv_obj_t *parent, char *name)
+{
+	struct menuentry *entry = (struct menuentry *)AllocatePool(sizeof(struct menuentry));
+	if (!entry)
+		return;
+
+	entry->btn = lv_list_add_button(parent, LV_SYMBOL_GPS, name);
+	lv_obj_set_style_bg_opa(entry->btn, LV_OPA_TRANSP, 0);
+	lv_obj_add_event_cb(entry->btn, boot_linux, LV_EVENT_CLICKED, NULL);
+	entry->next = simple_drv.entries;
+	simple_drv.entries = entry;
+}
+
 void efi_lv_entry(EFI_SYSTEM_TABLE *sys_table)
 {
-	lv_obj_t *obj, *btn;
+	lv_obj_t *obj;//, *btn;
 	lv_obj_t *parent = lv_obj_create(lv_screen_active());
-	uint16_t h_margin = 260, v_margin = 120;
+	uint16_t h_margin = 260, v_margin = 150;
 
 	LV_UNUSED(sys_table);
 	lv_obj_set_size(parent, simple_drv.scr_w, simple_drv.scr_h);
@@ -39,6 +53,7 @@ void efi_lv_entry(EFI_SYSTEM_TABLE *sys_table)
 	lv_obj_set_style_bg_image_opa(parent, LV_OPA_80, 0);
 
 	// 1. menu
+	// TODO: read disk and generate boot entries
 	obj = lv_list_create(parent);
 	lv_obj_set_size(obj, simple_drv.scr_w - h_margin, simple_drv.scr_h - v_margin);
 	lv_obj_center(obj);
@@ -46,34 +61,16 @@ void efi_lv_entry(EFI_SYSTEM_TABLE *sys_table)
 	lv_obj_set_style_bg_opa(obj, LV_OPA_20, LV_PART_MAIN);
 
 	lv_list_add_text(obj, "Detected");
-	btn = lv_list_add_button(obj, LV_SYMBOL_GPS, "Linux 6.9.0-rc6");
-	lv_obj_set_style_bg_opa(btn, LV_OPA_TRANSP, 0);
-	lv_obj_add_event_cb(btn, boot_linux, LV_EVENT_CLICKED, NULL);
-
-	btn = lv_list_add_button(obj, LV_SYMBOL_GPS, "Linux 6.6.0");
-	lv_obj_set_style_bg_opa(btn, LV_OPA_TRANSP, 0);
-	lv_obj_add_event_cb(btn, boot_linux, LV_EVENT_CLICKED, NULL);
-
-	btn = lv_list_add_button(obj, LV_SYMBOL_GPS, "Linux 6.1.0");
-	lv_obj_set_style_bg_opa(btn, LV_OPA_TRANSP, 0);
-	lv_obj_add_event_cb(btn, boot_linux, LV_EVENT_CLICKED, NULL);
-
-	btn = lv_list_add_button(obj, LV_SYMBOL_GPS, "Linux 5.10.0");
-	lv_obj_set_style_bg_opa(btn, LV_OPA_TRANSP, 0);
-	lv_obj_add_event_cb(btn, boot_linux, LV_EVENT_CLICKED, NULL);
+	menu_entry_add(obj, "Linux 6.9.0-rc7");
+	menu_entry_add(obj, "Linux 6.6.0");
+	menu_entry_add(obj, "Linux 6.1.0");
+	menu_entry_add(obj, "Linux 5.10.0");
 
 	lv_list_add_text(obj, "Custom");
-	btn = lv_list_add_button(obj, LV_SYMBOL_GPS, "Windows 11 LSTC");
-	lv_obj_set_style_bg_opa(btn, LV_OPA_TRANSP, 0);
-	lv_obj_add_event_cb(btn, boot_linux, LV_EVENT_CLICKED, NULL);
+	menu_entry_add(obj, "Windows 11 LSTC");
+	menu_entry_add(obj, "Plan9 Front 9931");
+	menu_entry_add(obj, "Firmware Setting");
 
-	btn = lv_list_add_button(obj, LV_SYMBOL_GPS, "Plan9 Front 9931");
-	lv_obj_set_style_bg_opa(btn, LV_OPA_TRANSP, 0);
-	lv_obj_add_event_cb(btn, boot_linux, LV_EVENT_CLICKED, NULL);
-
-	btn = lv_list_add_button(obj, LV_SYMBOL_GPS, "Firmware Setting");
-	lv_obj_set_style_bg_opa(btn, LV_OPA_TRANSP, 0);
-	lv_obj_add_event_cb(btn, boot_linux, LV_EVENT_CLICKED, NULL);
 	simple_drv.dbg = lv_list_add_text(obj, "[Debug message]");
 
 	// 2. progress

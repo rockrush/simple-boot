@@ -25,19 +25,20 @@ include lvgl/lvgl.mk
 LVSRCS=$(shell find lvgl/src -type f -name '*.c' | grep -v qrcode)
 LVOBJS=$(LVSRCS:.c=.o)
 
-TARGET = main.efi
+TARGET = simple-boot.efi
+TARGET_OBJS := main.o ui.o driver.o weed_1280.o weed_1920.o boot.o
 
 all:	gnu-efi/$(ARCH)/gnuefi/libgnuefi.a $(TARGET)
 
 gnu-efi/$(ARCH)/gnuefi/libgnuefi.a:
 	make -C gnu-efi
 
-main.so: main.o ui.o driver.o weed_1280.o weed_1920.o $(LVOBJS)
+simple-boot.so: $(TARGET_OBJS) $(LVOBJS)
 	$(LD) $(LDFLAGS) $^ -o $@ $(LOADLIBES)
 
 .PHONY: clean test
 clean:
-	@rm -f $(TARGET) *~ *.o *.so *.d
+	@rm -f $(TARGET) $(TARGET_OBJS) *~ *.o *.so *.d
 
 test: $(TARGET)
 	@rm -fr test

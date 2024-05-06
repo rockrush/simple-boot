@@ -1,9 +1,13 @@
+#include "lvgl.h"
+#include "boot.h"
+
 #define MOUSE_SCALE     380.0   // larger be more sensible
 
 struct simple_boot_drv_s {
 	EFI_GRAPHICS_OUTPUT_PROTOCOL *gout;
 	EFI_SIMPLE_POINTER_PROTOCOL *pmouse;
 	EFI_ABSOLUTE_POINTER_PROTOCOL *ptouchpad;
+	EFI_SHELL_PROTOCOL *shell;
 
 	lv_display_t *display;
 	UINTN scr_w, scr_h;
@@ -22,6 +26,7 @@ struct simple_boot_drv_s {
 	lv_group_t *g;
 	lv_obj_t *win, *menu, *set;
 	lv_obj_t *dbg;
+	struct menuentry *entries;
 };
 
 extern struct simple_boot_drv_s simple_drv;
